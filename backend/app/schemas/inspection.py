@@ -91,6 +91,23 @@ class SensorReading(BaseModel):
     unit: Optional[str] = None
 
 
+class CAPAPlan(BaseModel):
+    """Structured ISO 9001:2015 Clause 8.7 Corrective and Preventive Action plan."""
+
+    immediate_containment: str = Field(
+        description="Immediate containment action, e.g. quarantine part or line hold."
+    )
+    root_cause_analysis: str = Field(
+        description="Investigative hypothesis or confirmed failure mechanism."
+    )
+    corrective_action: str = Field(
+        description="Specific action required to eliminate the detected non-conformance."
+    )
+    preventive_action: str = Field(
+        description="Action to prevent recurrence across the production batch."
+    )
+
+
 class InspectionReport(BaseModel):
     """Final structured report returned by the workflow."""
 
@@ -120,6 +137,14 @@ class InspectionReport(BaseModel):
     human_review_reasons: list[str] = Field(default_factory=list)
 
     annotated_image_path: Optional[str] = None
+    audit_hash: Optional[str] = Field(
+        default=None, description="SHA-256 tamper-evident cryptographic hash."
+    )
+    compliance_standard: str = Field(
+        default="ISO 9001:2015 Clause 8.7",
+        description="Applicable quality assurance governance standard.",
+    )
+    capa_plan: Optional[CAPAPlan] = None
 
     def to_markdown(self) -> str:
         """Render the report as a readable Markdown summary."""
@@ -141,10 +166,22 @@ class InspectionReport(BaseModel):
             "\n".join(f"- {r}" for r in self.human_review_reasons)
             or "- _None._"
         )
+        capa_section = ""
+        if self.capa_plan:
+            capa_section = (
+                f"\n## Corrective and Preventive Action (CAPA Plan - {self.compliance_standard})\n"
+                f"- **Immediate Containment:** {self.capa_plan.immediate_containment}\n"
+                f"- **Root Cause Analysis:** {self.capa_plan.root_cause_analysis}\n"
+                f"- **Corrective Action:** {self.capa_plan.corrective_action}\n"
+                f"- **Preventive Action:** {self.capa_plan.preventive_action}\n"
+            )
+        audit_line = f"- **SHA-256 Audit Hash:** `{self.audit_hash}`\n" if self.audit_hash else ""
         return (
             f"# Inspection Report {self.inspection_id}\n\n"
             f"- **Object:** {self.object_name}\n"
             f"- **Time:** {self.inspection_time.isoformat()}\n"
+            f"- **Governance Standard:** {self.compliance_standard}\n"
+            f"{audit_line}"
             f"- **Input summary:** {self.input_data_summary}\n\n"
             f"## Defect\n"
             f"- **Type:** {self.defect_type}\n"
@@ -159,4 +196,5 @@ class InspectionReport(BaseModel):
             f"## Human Review\n"
             f"- **Required:** {'yes' if self.requires_human_review else 'no'}\n"
             f"{review_lines}\n"
+            f"{capa_section}"
         )

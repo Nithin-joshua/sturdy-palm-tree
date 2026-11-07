@@ -633,6 +633,14 @@
       ] : [],
       requires_human_review: isCritical,
       human_review_reasons: isCritical ? ["Severity level is critical: crack in pressure boundary."] : [],
+      audit_hash: "a4f892bc937104e578a1bc4028fae90142b78912ef0984a1d87e02514c3e8912",
+      compliance_standard: "ISO 9001:2015 Clause 8.7",
+      capa_plan: {
+        immediate_containment: isCritical ? "Immediately quarantine component and halt line operation." : "Component released for standard processing.",
+        root_cause_analysis: defectType === "crack" ? "High-cycle fatigue crack initiated at welding heat-affected zone." : "Superficial atmospheric oxidation.",
+        corrective_action: isCritical ? "Execute structural weld repair procedure WPS-04." : "No corrective intervention required.",
+        preventive_action: "Recalibrate seam tracking sensors and verify preheat temperature compliance."
+      },
       is_simulated_demo: true
     };
   }
@@ -706,6 +714,7 @@
     $("resLocation").textContent = r.defect_location || "Not specified";
     $("resComponentId").textContent = r.object_name || "Unassigned";
     $("resInspectionId").textContent = r.inspection_id || "—";
+    if ($("resAuditHash")) $("resAuditHash").textContent = r.audit_hash || "Simulated local seal";
     const detLabel = r.detector === "VLMDefectDetector"
       ? `Cloud VLM (${r.detector_model || "OpenRouter"})`
       : r.detector === "FallbackHeuristicDefectDetector"
@@ -838,6 +847,19 @@
     }
 
     // Button Actions
+    const btnCert = $("btnViewCert");
+    if (btnCert) {
+      btnCert.onclick = () => {
+        const base = (window.APP_CONFIG && window.APP_CONFIG.apiBase) || "";
+        if (!r.is_simulated_demo && r.inspection_id) {
+          window.open(`${base}/api/inspect/${r.inspection_id}/certificate`, "_blank");
+        } else {
+          showToast("Opening ISO 9001 compliance certificate...", false);
+          window.print();
+        }
+      };
+    }
+
     $("btnDownloadJson").onclick = () => {
       const blob = new Blob([JSON.stringify(r, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);

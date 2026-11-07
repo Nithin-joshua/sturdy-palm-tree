@@ -280,6 +280,10 @@
                 <span class="f-val" id="resDetector">None</span>
               </div>
               <div class="finding-pair" style="grid-column: 1 / -1;">
+                <span class="f-key">SHA-256 Audit Seal</span>
+                <span class="f-val" id="resAuditHash" style="font-family: var(--font-mono); font-size: 11px; word-break: break-all; color: var(--accent);">None</span>
+              </div>
+              <div class="finding-pair" style="grid-column: 1 / -1;">
                 <span class="f-key">Visual Analysis</span>
                 <span class="f-val" id="resDescription" style="font-weight: 400; font-family: var(--font); font-size: 13px; line-height: 1.4;">None</span>
               </div>
@@ -317,9 +321,10 @@
           <!-- Actions Footer -->
           <div class="divider"></div>
           <div class="result-actions">
-            <button type="button" class="btn-primary" id="btnDownloadJson">Download JSON</button>
+            <button type="button" class="btn-primary" id="btnViewCert">ISO 9001 Certificate</button>
+            <button type="button" class="btn-secondary" id="btnDownloadJson">Download JSON</button>
             <button type="button" class="btn-secondary" id="btnCopyJson">Copy JSON</button>
-            <button type="button" class="btn-secondary" id="btnPrintPdf">Print PDF</button>
+            <button type="button" class="btn-secondary" id="btnPrintPdf">Print Page</button>
             <button type="button" class="btn-secondary" id="btnNewInspection">New inspection</button>
           </div>
         </div>
