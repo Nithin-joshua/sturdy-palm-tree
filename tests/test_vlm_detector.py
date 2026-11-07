@@ -91,3 +91,25 @@ def test_vlm_no_image_short_circuits():
     obs = _detector("{}").detect(filename="img.png", image_bytes=None)
     assert obs.defect_type == "unknown"
     assert obs.confidence == 0.0
+
+
+def test_vlm_api_error_returns_low_confidence_unknown():
+    class _FailingCompletions:
+        def create(self, **kwargs):
+            raise RuntimeError("API connection timeout")
+
+    class _FailingChat:
+        completions = _FailingCompletions()
+
+    class _FailingClient:
+        chat = _FailingChat()
+
+    det = VLMDefectDetector(
+        config=VisionConfig(vlm_model="test-model", vlm_api_key="k"),
+        client=_FailingClient(),
+    )
+    obs = det.detect(filename="img.png", image_bytes=b"dummy_bytes")
+    assert obs.defect_type == "unknown"
+    assert obs.confidence == 0.0
+    assert "VLM call failed" in obs.description
+

@@ -31,6 +31,13 @@
 
       <!-- Image Stage: Fills remaining height, centered both axes -->
       <div class="image-stage" id="imageStage">
+        <!-- Stage View Toolbar (pinned top-right of canvas) -->
+        <div class="stage-toolbar" id="stageToolbar" hidden>
+          <button type="button" class="stage-tool-btn is-active" id="btnZoomFit" title="Fit image to view">Fit</button>
+          <button type="button" class="stage-tool-btn" id="btnZoomActual" title="100% native resolution">1:1</button>
+          <button type="button" class="stage-tool-btn is-active" id="btnToggleBbox" title="Toggle defect bounding box">Overlay</button>
+        </div>
+
         <!-- Center Aperture Icon for Empty State -->
         <div class="canvas-empty" id="canvasEmpty">
           <svg class="canvas-empty-crosshair" viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -55,13 +62,6 @@
           </svg>
           <div class="bbox-chip" id="bboxChip" hidden>
             <span id="bboxChipLabel">Crack 92%</span>
-          </div>
-
-          <!-- Stage View Toolbar -->
-          <div class="stage-toolbar" id="stageToolbar">
-            <button type="button" class="stage-tool-btn is-active" id="btnZoomFit" title="Fit image to view">Fit</button>
-            <button type="button" class="stage-tool-btn" id="btnZoomActual" title="100% native resolution">1:1</button>
-            <button type="button" class="stage-tool-btn is-active" id="btnToggleBbox" title="Toggle defect bounding box">Overlay</button>
           </div>
         </div>
       </div>

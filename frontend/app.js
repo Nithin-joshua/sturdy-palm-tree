@@ -100,12 +100,22 @@
     const scanLine = $("scanLine");
     const bboxSvg = $("bboxSvg");
     const bboxChip = $("bboxChip");
+    const toolbar = $("stageToolbar");
 
     if (state.imagePreviewUrl) {
       if (empty) empty.hidden = true;
       if (frame) frame.hidden = false;
       if (meta) meta.hidden = false;
-      if (img) img.src = state.imagePreviewUrl;
+      if (toolbar) toolbar.hidden = false;
+      if (img) {
+        img.src = state.imagePreviewUrl;
+        img.onload = () => {
+          if (img.naturalWidth && img.naturalHeight) {
+            const metaDim = $("metaDim");
+            if (metaDim) metaDim.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
+          }
+        };
+      }
 
       // Scan line sweeps once on photo upload
       if (scanLine) {
@@ -117,7 +127,9 @@
 
       $("metaFile").textContent = state.imageFile ? state.imageFile.name : "sample.png";
       $("metaSize").textContent = state.imageFile ? formatBytes(state.imageFile.size) : "512 KB";
-      $("metaDim").textContent = "512×512";
+      if (!img.naturalWidth) {
+        $("metaDim").textContent = "—";
+      }
       $("metaStatus").textContent = "READY";
 
       if (bboxSvg) bboxSvg.setAttribute("hidden", "");
@@ -126,6 +138,7 @@
       if (frame) frame.hidden = true;
       if (empty) empty.hidden = false;
       if (meta) meta.hidden = true;
+      if (toolbar) toolbar.hidden = true;
       if (img) img.src = "";
       if (bboxSvg) bboxSvg.setAttribute("hidden", "");
       if (bboxChip) bboxChip.hidden = true;

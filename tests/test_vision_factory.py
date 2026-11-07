@@ -126,3 +126,11 @@ def test_yolo_built_when_dependencies_present(monkeypatch):
     det = build_detector(VisionConfig(backend="yolo", yolo_model_path="w.pt"))
     assert built.get("called") is True
     assert isinstance(det, _Sentinel)
+
+
+def test_vlm_fallback_annotates_observation_description():
+    det = build_detector(VisionConfig(backend="vlm", vlm_api_key=None))
+    obs = det.detect(filename="crack.png")
+    assert "[Heuristic fallback:" in obs.description
+    assert obs.defect_type == "crack"
+

@@ -84,6 +84,25 @@ def _auto(config: VisionConfig) -> DefectDetector:
     return HeuristicDefectDetector()
 
 
+class FallbackHeuristicDefectDetector(HeuristicDefectDetector):
+    """Heuristic detector that annotates observations when fallback occurred."""
+
+    def __init__(self, fallback_reason: str) -> None:
+        super().__init__()
+        self.fallback_reason = fallback_reason
+
+    def detect(
+        self,
+        *,
+        filename: str,
+        image_bytes: Optional[bytes] = None,
+        hints: Optional[dict] = None,
+    ) -> DefectObservation:
+        obs = super().detect(filename=filename, image_bytes=image_bytes, hints=hints)
+        obs.description = f"[Heuristic fallback: {self.fallback_reason}] {obs.description}"
+        return obs
+
+
 def build_detector(config: Optional[VisionConfig] = None) -> DefectDetector:
     """Construct the detector named by ``config`` (defaults to env config)."""
     config = config or VisionConfig.from_env()
@@ -109,4 +128,5 @@ def build_detector(config: Optional[VisionConfig] = None) -> DefectDetector:
             backend,
             exc,
         )
+        return FallbackHeuristicDefectDetector(str(exc))
     return HeuristicDefectDetector()

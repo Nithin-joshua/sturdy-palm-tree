@@ -10,7 +10,13 @@ services:
     autoDeploy: true
     envVars:
       - key: INSPECTION_DETECTOR
-        value: heuristic
+        value: vlm
+      - key: INSPECTION_VLM_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: INSPECTION_VLM_MODEL
+        value: meta-llama/llama-3.2-11b-vision-instruct:free
+      - key: INSPECTION_VLM_API_KEY
+        sync: false
       - key: CORS_ORIGINS
         value: "*"
       - key: MAX_UPLOAD_SIZE_MB

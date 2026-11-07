@@ -12,6 +12,7 @@ The ``openai`` SDK is imported lazily and the client can be injected for tests.
 from __future__ import annotations
 
 import base64
+import logging
 from pathlib import Path
 from typing import Any, Optional
 
@@ -23,6 +24,8 @@ from backend.app.vision.vlm_common import (
     USER_PROMPT,
     observation_from_payload,
 )
+
+logger = logging.getLogger(__name__)
 
 _MIME_BY_SUFFIX = {
     ".png": "image/png",
@@ -90,19 +93,28 @@ class VLMDefectDetector(DefectDetector):
             f"data:{_mime_for(filename)};base64,"
             + base64.b64encode(image_bytes).decode("ascii")
         )
-        response = client.chat.completions.create(
-            model=self.config.vlm_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": USER_PROMPT},
-                        {"type": "image_url", "image_url": {"url": data_uri}},
-                    ],
-                },
-            ],
-            temperature=0,
-        )
-        content = response.choices[0].message.content or ""
-        return observation_from_payload(content, hints)
+        try:
+            response = client.chat.completions.create(
+                model=self.config.vlm_model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": USER_PROMPT},
+                            {"type": "image_url", "image_url": {"url": data_uri}},
+                        ],
+                    },
+                ],
+                temperature=0,
+            )
+            content = response.choices[0].message.content or ""
+            return observation_from_payload(content, hints)
+        except Exception as exc:
+            logger.error("VLM inference failed via model %s: %s", self.config.vlm_model, exc)
+            return DefectObservation(
+                defect_type="unknown",
+                description=f"VLM call failed ({exc.__class__.__name__}: {exc}).",
+                confidence=0.0,
+                location=hints.get("location"),
+            )
