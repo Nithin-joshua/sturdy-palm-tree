@@ -10,6 +10,12 @@ def test_default_is_heuristic():
     assert isinstance(det, HeuristicDefectDetector)
 
 
+def test_default_detector_when_unset_is_heuristic(monkeypatch):
+    monkeypatch.delenv("INSPECTION_DETECTOR", raising=False)
+    det = build_detector()
+    assert isinstance(det, HeuristicDefectDetector)
+
+
 def test_unknown_backend_falls_back_to_heuristic():
     det = build_detector(VisionConfig(backend="does-not-exist"))
     assert isinstance(det, HeuristicDefectDetector)
@@ -20,8 +26,18 @@ def test_yolo_without_model_path_falls_back():
     assert isinstance(det, HeuristicDefectDetector)
 
 
+def test_yolo_without_dependencies_falls_back():
+    det = build_detector(VisionConfig(backend="yolo", yolo_model_path="fake.pt"))
+    assert isinstance(det, HeuristicDefectDetector)
+
+
 def test_vlm_without_api_key_falls_back():
     det = build_detector(VisionConfig(backend="vlm", vlm_api_key=None))
+    assert isinstance(det, HeuristicDefectDetector)
+
+
+def test_vlm_without_dependencies_falls_back():
+    det = build_detector(VisionConfig(backend="vlm", vlm_api_key="fake-key"))
     assert isinstance(det, HeuristicDefectDetector)
 
 

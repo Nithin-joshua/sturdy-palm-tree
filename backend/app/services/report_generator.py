@@ -51,6 +51,7 @@ def build_report(
         ),
         defect_type=observation.defect_type,
         defect_location=observation.location,
+        defect_bbox=observation.bounding_box,
         confidence=observation.confidence,
         severity_level=decision.severity_level,
         recommended_action=decision.recommended_action,

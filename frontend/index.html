@@ -2,79 +2,327 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multimodal Industrial Inspection Agent</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Industrial surface defect inspection console with automated standards compliance matching and telemetry analysis." />
+  <title>Industrial Inspection Agent</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230B0D10' stroke='%23FFB020' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' stroke='%23FFB020' stroke-width='2' fill='none'/%3E%3Cpath d='M16 4v4M16 24v4M4 16h4M24 16h4' stroke='%23FFB020' stroke-width='2'/%3E%3C/svg%3E" />
+  
+  <!-- Fonts: Space Grotesk (text) + JetBrains Mono (values & labels) with font-display swap -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">IIA</span>
-      <div>
-        <h1>Multimodal Industrial Inspection Agent</h1>
-        <p class="subtitle">Image + standard + sensors &rarr; defect, severity, evidence &amp; report</p>
+  <!-- Full Viewport 2-Pane Workspace -->
+  <div class="workspace">
+    <!-- LEFT PANE: Fixed, Hero Image Canvas (bg #0B0D10) -->
+    <div class="pane-hero" id="heroPane">
+      <!-- Minimal Brand Wordmark & Agent API Status (pinned top 24px) -->
+      <div class="brand-mark">
+        <span class="brand-text">Industrial Inspection Agent</span>
+        <span class="api-status-pill" id="apiStatusPill" title="Inspection Agent Service Status">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-label" id="statusLabel">Checking agent…</span>
+        </span>
       </div>
-    </div>
-    <div class="api-config">
-      <label for="apiBase">API</label>
-      <input id="apiBase" type="text" value="http://127.0.0.1:8000" />
-      <span id="apiStatus" class="status-dot" title="Backend status"></span>
-    </div>
-  </header>
 
-  <main class="layout">
-    <section class="panel">
-      <h2>1. Upload inputs</h2>
-      <form id="inspectForm">
-        <label class="field">
-          <span>Defect image <em>(required)</em></span>
-          <input id="image" type="file" accept="image/*" required />
-        </label>
-        <div id="imagePreviewWrap" class="preview" hidden>
-          <img id="imagePreview" alt="preview" />
+      <!-- Image Stage: Fills remaining height, centered both axes -->
+      <div class="image-stage" id="imageStage">
+        <!-- Center Aperture Icon for Empty State -->
+        <div class="canvas-empty" id="canvasEmpty">
+          <svg class="canvas-empty-crosshair" viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <rect x="4" y="4" width="24" height="24" rx="4" stroke="var(--border)"></rect>
+            <circle cx="16" cy="16" r="6" stroke="var(--accent)"></circle>
+            <path d="M16 2v4M16 26v4M2 16h4M26 16h4" stroke="var(--accent)"></path>
+          </svg>
+          <span class="canvas-empty-label">Awaiting inspection photo</span>
         </div>
 
-        <label class="field">
-          <span>Inspection standard <em>(.txt / .md / .pdf)</em></span>
-          <input id="standard" type="file" accept=".txt,.md,.markdown,.pdf" required />
-        </label>
+        <!-- Image Frame: 1px border, 8px radius, soft shadow -->
+        <div class="image-frame" id="imageFrame" hidden>
+          <!-- Hero Image -->
+          <img id="heroImage" class="hero-img" alt="Inspection capture" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" />
 
-        <label class="field">
-          <span>Sensor CSV <em>(optional)</em></span>
-          <input id="sensor" type="file" accept=".csv" />
-        </label>
+          <!-- Laser Scan Line -->
+          <div class="scan-line" id="scanLine" aria-hidden="true"></div>
 
-        <label class="field">
-          <span>Object name <em>(optional)</em></span>
-          <input id="objectName" type="text" placeholder="e.g. pipeline_segment_A12" />
-        </label>
+          <!-- Bounding Box Overlay: One label only, flush on top-left edge -->
+          <svg class="bbox-svg" id="bboxSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" hidden>
+            <rect id="bboxRect" class="bbox-rect" x="32" y="22" width="35" height="55" />
+          </svg>
+          <div class="bbox-chip" id="bboxChip" hidden>
+            <span id="bboxChipLabel">Crack 92%</span>
+          </div>
 
-        <details class="advanced">
-          <summary>Advanced: vision hints (JSON)</summary>
-          <p class="hint">The MVP detector is heuristic. Provide hints to simulate a real model.</p>
-          <textarea id="visionHints" rows="6" spellcheck="false">{
-  "defect_type": "crack",
-  "confidence": 0.91,
-  "length_mm": 8.0,
-  "load_bearing_area": true,
-  "location": "longitudinal weld seam"
-}</textarea>
-        </details>
-
-        <button id="submitBtn" type="submit">Run inspection</button>
-        <p id="errorMsg" class="error" hidden></p>
-      </form>
-    </section>
-
-    <section class="panel">
-      <h2>2. Inspection report</h2>
-      <div id="empty" class="empty">
-        <p>No report yet. Upload an image and a standard, then run inspection.</p>
+          <!-- Stage View Toolbar -->
+          <div class="stage-toolbar" id="stageToolbar">
+            <button type="button" class="stage-tool-btn is-active" id="btnZoomFit" title="Fit image to view">Fit</button>
+            <button type="button" class="stage-tool-btn" id="btnZoomActual" title="100% native resolution">1:1</button>
+            <button type="button" class="stage-tool-btn is-active" id="btnToggleBbox" title="Toggle defect bounding box">Overlay</button>
+          </div>
+        </div>
       </div>
-      <div id="report" class="report" hidden></div>
-    </section>
-  </main>
 
+      <!-- Telemetry Metadata Strip (pinned bottom 16px) -->
+      <div class="canvas-meta" id="canvasMeta" hidden>
+        <div class="meta-group">
+          <span class="meta-item meta-item-file"><span class="m-lbl">File</span> <span class="m-val" id="metaFile">None</span></span>
+          <span class="meta-item"><span class="m-lbl">Size</span> <span class="m-val" id="metaSize">None</span></span>
+          <span class="meta-item"><span class="m-lbl">Dim</span> <span class="m-val" id="metaDim">512×512</span></span>
+        </div>
+        <span class="meta-item meta-item-status"><span class="m-lbl">Status</span> <span class="m-val" id="metaStatus">Ready</span></span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: Independent Scrolling Flow Content (bg #0E1217) -->
+    <div class="pane-content" id="contentPane">
+      <!-- Slim Stepper: Interactive Text ("1 Photo / 2 Standard / 3 Run") -->
+      <nav class="stepper-slim" id="stepperSlim" aria-label="Inspection steps">
+        <button type="button" class="step-text is-active" id="step1Label">1 Photo</button>
+        <span class="step-divider" aria-hidden="true">/</span>
+        <button type="button" class="step-text" id="step2Label">2 Standard</button>
+        <span class="step-divider" aria-hidden="true">/</span>
+        <button type="button" class="step-text" id="step3Label">3 Run</button>
+      </nav>
+
+      <!-- Flow Container -->
+      <div class="flow-container" id="flowContainer">
+        <!-- Form View (Steps 1, 2, 3) -->
+        <div class="flow-form" id="flowForm">
+          <!-- STEP 1: PHOTO -->
+          <section class="flow-step" id="stepPanel1">
+            <h1 class="flow-h1">Upload defect photo</h1>
+
+            <!-- Dropzone with breathing amber border -->
+            <div class="dropzone" id="imageDropzone" tabindex="0" role="button" aria-label="Upload inspection defect photo">
+              <input type="file" id="imageInput" accept="image/*" hidden />
+              
+              <div class="dropzone-idle" id="dropzoneIdle">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <div class="dropzone-prompt">Drop defect photo here or <span class="action-text">browse</span></div>
+                <div class="dropzone-sub">PNG, JPG, or WEBP up to 5 MB</div>
+              </div>
+
+              <div class="dropzone-file-selected" id="dropzoneSelected" hidden>
+                <img id="selectedThumb" class="selected-thumb" alt="Preview thumbnail" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" />
+                <div class="selected-info">
+                  <span class="selected-name" id="selectedName">defect.png</span>
+                  <span class="selected-size" id="selectedSize">0 KB</span>
+                </div>
+                <button type="button" class="btn-remove" id="btnRemoveImage" aria-label="Remove image">&times;</button>
+              </div>
+            </div>
+
+            <!-- Samples Row (Ghost Links) -->
+            <div class="sample-row">
+              <span class="sample-row-label">Or use sample:</span>
+              <button type="button" class="sample-link" id="sampleCrack">Weld crack</button>
+              <button type="button" class="sample-link" id="sampleCorrosion">Corrosion pit</button>
+              <button type="button" class="sample-link" id="sampleScratch">Surface scratch</button>
+            </div>
+
+            <!-- Actions -->
+            <div class="flow-actions right">
+              <button type="button" class="btn-primary" id="btnNext1" disabled>Next</button>
+            </div>
+          </section>
+
+          <!-- STEP 2: STANDARD -->
+          <section class="flow-step" id="stepPanel2" hidden>
+            <h1 class="flow-h1">Select inspection standard</h1>
+
+            <div class="flow-field">
+              <label class="field-label" for="standardSelect">Inspection standard</label>
+              <select id="standardSelect" class="flow-select">
+                <option value="builtin">Built-in: General Engineering Inspection Standard (ISO 5817 / ASME VIII)</option>
+                <option value="custom">Upload custom standard document (PDF / Markdown / TXT)</option>
+              </select>
+            </div>
+
+            <!-- Custom Document Picker -->
+            <div class="custom-doc-box" id="customDocBox" hidden>
+              <input type="file" id="standardInput" accept=".pdf,.md,.txt,.json" hidden />
+              <button type="button" class="btn-secondary" id="btnPickDoc">Choose standard document</button>
+              <div class="file-chip" id="standardChip" hidden>
+                <span class="chip-label">Doc</span>
+                <span class="chip-name" id="standardName">None</span>
+                <button type="button" class="btn-chip-remove" id="btnRemoveStandard" aria-label="Remove standard">&times;</button>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flow-actions split">
+              <button type="button" class="btn-secondary" id="btnBack2">Back</button>
+              <button type="button" class="btn-primary" id="btnNext2">Next</button>
+            </div>
+          </section>
+
+          <!-- STEP 3: RUN -->
+          <section class="flow-step" id="stepPanel3" hidden>
+            <h1 class="flow-h1">Run inspection</h1>
+
+            <!-- Optional Component ID -->
+            <div class="flow-field">
+              <label class="field-label" for="objectNameInput">Component identifier <span class="muted-tag">(Optional)</span></label>
+              <input type="text" id="objectNameInput" class="flow-input" placeholder="e.g. pipe_segment_A12" />
+            </div>
+
+            <!-- Optional Sensor CSV -->
+            <div class="flow-field">
+              <label class="field-label">Sensor telemetry log <span class="muted-tag">(Optional CSV)</span></label>
+              <div class="sensor-row">
+                <input type="file" id="sensorInput" accept=".csv,.txt" hidden />
+                <button type="button" class="btn-secondary" id="btnPickSensor">Attach CSV file</button>
+                <div class="file-chip" id="sensorChip" hidden>
+                  <span class="chip-label">CSV</span>
+                  <span class="chip-name" id="sensorName">None</span>
+                  <button type="button" class="btn-chip-remove" id="btnRemoveSensor" aria-label="Remove sensors">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flow-actions split">
+              <button type="button" class="btn-secondary" id="btnBack3">Back</button>
+              <button type="button" class="btn-primary" id="btnRun">Run inspection</button>
+            </div>
+          </section>
+        </div>
+
+        <!-- LIVE PIPELINE STAGES (Shown while running) -->
+        <div class="pipeline-loader" id="pipelineLoader" hidden aria-live="polite">
+          <div class="pipeline-heading">Diagnostic pipeline executing</div>
+          <div class="pipeline-stage" id="stage1">
+            <span class="stage-indicator" id="stageInd1"><span class="stage-spin"></span></span>
+            <span class="stage-name">Detect surface defects</span>
+          </div>
+          <div class="pipeline-stage" id="stage2">
+            <span class="stage-indicator" id="stageInd2">○</span>
+            <span class="stage-name">Retrieve standard clauses</span>
+          </div>
+          <div class="pipeline-stage" id="stage3">
+            <span class="stage-indicator" id="stageInd3">○</span>
+            <span class="stage-name">Classify severity &amp; risk</span>
+          </div>
+        </div>
+
+        <!-- RESULT VIEW -->
+        <div class="flow-result" id="flowResult" hidden>
+          <!-- Demo Notice (shown when offline fallback executes) -->
+          <div class="demo-banner" id="demoBanner" hidden>
+            <svg class="demo-banner-icon" viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2" fill="none"></circle>
+              <path d="M8 7v4M8 5h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+            <span id="demoBannerText">Demonstration mode: simulated diagnostic result.</span>
+          </div>
+
+          <!-- 1. Verdict (Clean border, high contrast, red/green tint) -->
+          <div class="verdict-section" id="verdictSection">
+            <div class="verdict-header-row">
+              <div class="verdict-title" id="verdictText">FAIL</div>
+              <div class="severity-badge" id="severityBadge">Critical</div>
+            </div>
+            <div class="verdict-action" id="verdictAction">Action: Stop machine immediately</div>
+          </div>
+
+          <!-- 2. Confidence -->
+          <div class="divider"></div>
+          <div class="confidence-row">
+            <span class="section-label">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" id="confFill" style="width: 0%;"></div>
+            </div>
+            <span class="confidence-number" id="confNumber">0.0%</span>
+          </div>
+
+          <!-- 3. Supervisor Review -->
+          <div class="divider"></div>
+          <div class="review-row" id="reviewRow">
+            <span class="review-icon" id="reviewIcon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="var(--warn)" aria-hidden="true">
+                <path d="M8 1L0.5 14h15L8 1zm0 3l5.5 9.5h-11L8 4zm-.75 3v3.5h1.5V7h-1.5zm0 4.5v1.5h1.5v-1.5h-1.5z"/>
+              </svg>
+            </span>
+            <span class="review-text" id="reviewText">Supervisor review required: Severity is critical.</span>
+          </div>
+
+          <!-- 4. Findings -->
+          <div class="divider"></div>
+          <div class="findings-section">
+            <span class="section-label">Observation findings</span>
+            <div class="findings-grid">
+              <div class="finding-pair">
+                <span class="f-key">Defect type</span>
+                <span class="f-val" id="resDefectType">None</span>
+              </div>
+              <div class="finding-pair">
+                <span class="f-key">Location</span>
+                <span class="f-val" id="resLocation">None</span>
+              </div>
+              <div class="finding-pair">
+                <span class="f-key">Component ID</span>
+                <span class="f-val" id="resComponentId">None</span>
+              </div>
+              <div class="finding-pair">
+                <span class="f-key">Inspection ID</span>
+                <span class="f-val" id="resInspectionId">None</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. Clauses -->
+          <div class="divider"></div>
+          <div class="clauses-section">
+            <div class="clauses-section-header">
+              <span class="section-label">Matched standard clauses</span>
+              <button type="button" class="btn-text-action" id="btnToggleAllClauses">Expand all</button>
+            </div>
+            <div class="clauses-accordion" id="clausesList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 6. Sensor Breaches (if CSV provided) -->
+          <div class="sensor-section" id="sensorSection" hidden>
+            <div class="divider"></div>
+            <span class="section-label">Sensor telemetry</span>
+            <div class="sensor-list" id="sensorList">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 7. Decision Rationale -->
+          <div class="divider"></div>
+          <div class="rationale-section">
+            <span class="section-label">Decision rationale</span>
+            <p class="rationale-p" id="rationaleText">None</p>
+          </div>
+
+          <!-- Actions Footer -->
+          <div class="divider"></div>
+          <div class="result-actions">
+            <button type="button" class="btn-primary" id="btnDownloadJson">Download JSON</button>
+            <button type="button" class="btn-secondary" id="btnCopyJson">Copy JSON</button>
+            <button type="button" class="btn-secondary" id="btnPrintPdf">Print PDF</button>
+            <button type="button" class="btn-secondary" id="btnNewInspection">New inspection</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

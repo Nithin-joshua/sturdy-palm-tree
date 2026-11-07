@@ -76,12 +76,73 @@ docs/
 
 ## Quickstart
 
+### Quick 1-Click Launch
+
+- **Windows:** Double-click `start.bat` (or run `./start.bat` in PowerShell)
+- **macOS / Linux:** Run `chmod +x start.sh && ./start.sh`
+
+Both scripts automatically create `.venv`, install core lightweight dependencies, and launch the unified server at `http://localhost:8000`.
+
+### Docker Launch (Zero Local Python Setup)
+
 ```bash
-uv venv .venv
-uv pip install -p .venv/bin/python -r backend/requirements.txt
-.venv/bin/python -m pytest tests/ -q
-.venv/bin/uvicorn backend.app.main:app --reload
+# Build and run with standard Docker
+docker build -t inspection-agent .
+docker run -p 8000:8000 -v "${PWD}/outputs:/app/outputs" inspection-agent
+
+# Or using Docker Compose (if compose plugin installed):
+docker compose up --build
 ```
+Open `http://localhost:8000` in your browser.
+
+### Manual Setup
+
+#### Windows (PowerShell)
+
+```powershell
+# 1. Create and activate virtual environment
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# 2. Install core lightweight dependencies
+pip install -r backend/requirements.txt
+
+# 3. Start unified server (serves frontend + API on port 8000)
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+# open http://localhost:8000
+```
+
+#### macOS / Linux
+
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2. Install core lightweight dependencies
+pip install -r backend/requirements.txt
+
+# 3. Start unified server (serves frontend + API on port 8000)
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+# open http://localhost:8000
+```
+
+### Configuration & Environment
+
+Copy `.env.example` to `.env` to customize settings without editing code:
+
+```bash
+cp .env.example .env   # macOS/Linux
+copy .env.example .env # Windows
+```
+
+Key variables available:
+- `HOST`: Server host (default `0.0.0.0`)
+- `PORT`: Server port (default `8000`)
+- `CORS_ORIGINS`: Allowed origins (default `*` for local dev; comma-separated URLs in production)
+- `MAX_UPLOAD_SIZE_MB`: Max upload size limit (default `25` MB)
+- `INSPECTION_DETECTOR`: Defect detector backend (`heuristic` default, `vlm`, `qwen`, or `yolo`)
+
 
 Health check:
 
@@ -103,14 +164,19 @@ The response is a structured `InspectionReport` (see `data/sample_reports/exampl
 
 ### Frontend
 
-The frontend is a dependency-free static page. Start the backend, then serve the UI:
-
-```bash
-python -m http.server 5173 --directory frontend
-# open http://127.0.0.1:5173
-```
-
+The frontend is served directly by FastAPI at `/` (`http://localhost:8000`). No separate server or build step is required.
 Upload an image + standard (+ optional sensor CSV), then view the rendered report.
+
+## Cloud Hosting
+
+Deploy to free or cloud hosting with zero reconfiguration:
+
+- **Render:** Push to GitHub and deploy using [`render.yaml`](render.yaml) (1-click Blueprint).
+- **Railway:** Connect repository; Railway detects [`Dockerfile`](Dockerfile) and [`railway.toml`](railway.toml).
+- **Fly.io:** Run `fly launch` and `fly deploy` using [`fly.toml`](fly.toml).
+- **Docker VPS / Cloud VMs:** Run `docker run -p 80:8000 inspection-agent`.
+
+Full deployment walkthroughs are in [`docs/hosting.md`](docs/hosting.md).
 
 ## How It Works
 

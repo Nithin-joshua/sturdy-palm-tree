@@ -1,0 +1,17 @@
+services:
+  inspection-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: industrial-inspection-agent
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - CORS_ORIGINS=*
+      - MAX_UPLOAD_SIZE_MB=25
+      - INSPECTION_DETECTOR=heuristic
+    volumes:
+      - ./outputs:/app/outputs
+    restart: unless-stopped

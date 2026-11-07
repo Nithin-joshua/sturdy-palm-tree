@@ -51,6 +51,8 @@ logs/
 *.swp
 *.swo
 .DS_Store
+.roo/
+graphify-out/
 
 # Jupyter
 .ipynb_checkpoints/

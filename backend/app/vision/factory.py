@@ -26,7 +26,13 @@ logger = logging.getLogger(__name__)
 
 
 def _installed(*modules: str) -> bool:
-    return all(importlib.util.find_spec(m) is not None for m in modules)
+    for m in modules:
+        try:
+            if importlib.util.find_spec(m) is None:
+                return False
+        except (ImportError, AttributeError, ValueError):
+            return False
+    return True
 
 
 def _build_yolo(config: VisionConfig) -> DefectDetector:
@@ -64,9 +70,9 @@ def _build_vlm(config: VisionConfig) -> DefectDetector:
 
 def _auto(config: VisionConfig) -> DefectDetector:
     candidates = (
-        (_build_yolo, bool(config.yolo_model_path)),
+        (_build_yolo, bool(config.yolo_model_path) and _installed("ultralytics", "PIL")),
         (_build_qwen, _installed(*_QWEN_DEPS)),
-        (_build_vlm, bool(config.vlm_api_key)),
+        (_build_vlm, bool(config.vlm_api_key) and _installed("openai")),
     )
     for builder, configured in candidates:
         if not configured:

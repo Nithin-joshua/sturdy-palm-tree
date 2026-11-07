@@ -1,0 +1,17 @@
+# Render Blueprint specification for 1-click cloud deployment
+# See docs/hosting.md for step-by-step instructions.
+services:
+  - type: web
+    name: industrial-inspection-agent
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: INSPECTION_DETECTOR
+        value: heuristic
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "25"

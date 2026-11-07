@@ -1,0 +1,11 @@
+customModes:
+  - slug: frontend
+    name: Frontend
+    roleDefinition: Senior frontend engineer. Plain, conventional, responsive websites. Verify visually before finishing.
+    groups:
+      - read
+      - - edit
+        - fileRegex: ^frontend/
+          description: frontend only
+      - command
+      - mcp

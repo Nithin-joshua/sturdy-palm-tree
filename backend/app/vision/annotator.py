@@ -63,4 +63,4 @@ def annotate_defect(
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{inspection_id}_annotated.png"
     image.save(out_path)
-    return str(out_path)
+    return out_path.as_posix()

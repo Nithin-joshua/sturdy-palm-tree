@@ -103,6 +103,7 @@ class InspectionReport(BaseModel):
 
     defect_type: str
     defect_location: Optional[str] = None
+    defect_bbox: Optional[BoundingBox] = None
     confidence: float = Field(ge=0.0, le=1.0)
 
     severity_level: SeverityLevel

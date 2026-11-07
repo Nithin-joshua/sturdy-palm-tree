@@ -7,11 +7,21 @@ from typing import Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
+from backend.app.core.config import get_app_config
 from backend.app.rag.document_loader import UnsupportedDocumentError
 from backend.app.schemas.inspection import InspectionReport
 from backend.app.services.workflow import run_inspection
 
 router = APIRouter(prefix="/api", tags=["inspection"])
+
+
+def validate_payload_size(data: bytes, label: str, max_bytes: int, max_mb: int) -> None:
+    """Ensure uploaded payload byte length does not exceed configured threshold."""
+    if len(data) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"{label} exceeds maximum upload limit of {max_mb} MB.",
+        )
 
 
 @router.post("/inspect", response_model=InspectionReport)
@@ -29,9 +39,23 @@ async def inspect(
         default=False, description="Save an annotated image with the defect box."
     ),
 ) -> InspectionReport:
+    config = get_app_config()
+    max_bytes = config.max_upload_size_bytes
+
     image_bytes = await image.read()
+    validate_payload_size(image_bytes, "Image file", max_bytes, config.max_upload_size_mb)
+
     standard_bytes = await standard.read()
-    sensor_data = await sensor_csv.read() if sensor_csv is not None else None
+    validate_payload_size(
+        standard_bytes, "Standard document", max_bytes, config.max_upload_size_mb
+    )
+
+    sensor_data = None
+    if sensor_csv is not None:
+        sensor_data = await sensor_csv.read()
+        validate_payload_size(
+            sensor_data, "Sensor CSV", max_bytes, config.max_upload_size_mb
+        )
 
     hints = None
     if vision_hints:
@@ -56,6 +80,7 @@ async def inspect(
             object_name=object_name,
             vision_hints=hints,
             annotate=annotate,
+            output_dir=config.outputs_dir,
         )
     except UnsupportedDocumentError as exc:
         raise HTTPException(status_code=415, detail=str(exc)) from exc
