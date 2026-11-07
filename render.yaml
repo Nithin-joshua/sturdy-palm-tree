@@ -14,7 +14,7 @@ services:
       - key: INSPECTION_VLM_BASE_URL
         value: https://openrouter.ai/api/v1
       - key: INSPECTION_VLM_MODEL
-        value: meta-llama/llama-3.2-11b-vision-instruct:free
+        value: nvidia/nemotron-3.5-super-vl:free
       - key: INSPECTION_VLM_API_KEY
         sync: false
       - key: CORS_ORIGINS

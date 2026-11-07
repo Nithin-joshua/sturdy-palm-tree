@@ -86,7 +86,7 @@ class VisionConfig:
         )
         default_base_url = "https://openrouter.ai/api/v1" if is_openrouter else None
         default_model = (
-            "meta-llama/llama-3.2-11b-vision-instruct:free"
+            "nvidia/nemotron-3.5-super-vl:free"
             if is_openrouter
             else "qwen2.5vl"
         )
