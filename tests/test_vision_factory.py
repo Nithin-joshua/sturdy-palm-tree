@@ -36,7 +36,10 @@ def test_vlm_without_api_key_falls_back():
     assert isinstance(det, HeuristicDefectDetector)
 
 
-def test_vlm_without_dependencies_falls_back():
+def test_vlm_without_dependencies_falls_back(monkeypatch):
+    import backend.app.vision.factory as factory
+
+    monkeypatch.setattr(factory, "_installed", lambda *mods: False)
     det = build_detector(VisionConfig(backend="vlm", vlm_api_key="fake-key"))
     assert isinstance(det, HeuristicDefectDetector)
 

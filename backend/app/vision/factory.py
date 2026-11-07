@@ -59,8 +59,8 @@ def _build_qwen(config: VisionConfig) -> DefectDetector:
 
 
 def _build_vlm(config: VisionConfig) -> DefectDetector:
-    if not config.vlm_api_key:
-        raise RuntimeError("INSPECTION_VLM_API_KEY (or OPENAI_API_KEY) is not set.")
+    if not config.vlm_api_key or config.vlm_api_key == "your_openrouter_api_key_here":
+        raise RuntimeError("INSPECTION_VLM_API_KEY (or OPENAI_API_KEY) is not set or is still the placeholder.")
     if not _installed("openai"):
         raise RuntimeError("openai is not installed.")
     from backend.app.vision.vlm_detector import VLMDefectDetector
