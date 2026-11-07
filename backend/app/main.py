@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -43,8 +44,17 @@ app.include_router(inspect_router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "name": "Multimodal Industrial Inspection Agent API"}
+def health() -> dict[str, Any]:
+    from backend.app.vision.config import VisionConfig
+    v_cfg = VisionConfig.from_env()
+    has_key = bool(v_cfg.vlm_api_key and v_cfg.vlm_api_key != "your_openrouter_api_key_here")
+    return {
+        "status": "ok",
+        "name": "Multimodal Industrial Inspection Agent API",
+        "detector": v_cfg.backend,
+        "vlm_model": v_cfg.vlm_model,
+        "vlm_configured": has_key,
+    }
 
 
 # Mount static frontend at root (after API routes so API endpoints take precedence)

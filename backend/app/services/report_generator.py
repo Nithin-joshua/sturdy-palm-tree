@@ -39,6 +39,8 @@ def build_report(
     sensor_readings: Optional[list[SensorReading]] = None,
     standard_name: Optional[str] = None,
     annotated_image_path: Optional[str] = None,
+    detector: Optional[str] = None,
+    detector_model: Optional[str] = None,
 ) -> InspectionReport:
     """Combine all pieces into the final report object."""
     sensor_readings = sensor_readings or []
@@ -50,9 +52,12 @@ def build_report(
             sensor_readings=sensor_readings,
         ),
         defect_type=observation.defect_type,
+        defect_description=observation.description,
         defect_location=observation.location,
         defect_bbox=observation.bounding_box,
         confidence=observation.confidence,
+        detector=detector,
+        detector_model=detector_model,
         severity_level=decision.severity_level,
         recommended_action=decision.recommended_action,
         risk_explanation=decision.risk_explanation,

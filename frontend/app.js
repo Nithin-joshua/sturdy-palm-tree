@@ -706,6 +706,13 @@
     $("resLocation").textContent = r.defect_location || "Not specified";
     $("resComponentId").textContent = r.object_name || "Unassigned";
     $("resInspectionId").textContent = r.inspection_id || "—";
+    const detLabel = r.detector === "VLMDefectDetector"
+      ? `Cloud VLM (${r.detector_model || "OpenRouter"})`
+      : r.detector === "FallbackHeuristicDefectDetector"
+      ? "Heuristic Fallback (VLM config missing)"
+      : (r.detector || "Heuristic Defect Detector");
+    if ($("resDetector")) $("resDetector").textContent = detLabel;
+    if ($("resDescription")) $("resDescription").textContent = r.defect_description || r.risk_explanation || "No visual description provided.";
 
     // 5. Clauses (Accordion: rows separated by 1px divider, open row amber left rule 2px)
     const clausesList = $("clausesList");
@@ -995,9 +1002,20 @@
       const res = await fetch(`${base}/health`, { signal: controller.signal });
       clearTimeout(tid);
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         dot.className = "status-dot is-online";
-        lbl.textContent = "Agent connected";
-        pill.title = `Backend server online at ${displayHost}`;
+        if (data.detector === "vlm") {
+          if (data.vlm_configured) {
+            lbl.textContent = `Agent (VLM Cloud Active)`;
+            pill.title = `Backend online using OpenRouter model: ${data.vlm_model}`;
+          } else {
+            lbl.textContent = `Agent (Missing VLM API Key)`;
+            pill.title = `INSPECTION_VLM_API_KEY is unset or placeholder. Falling back to heuristic.`;
+          }
+        } else {
+          lbl.textContent = `Agent (${data.detector || "connected"})`;
+          pill.title = `Backend server online at ${displayHost}`;
+        }
         return;
       }
     } catch {

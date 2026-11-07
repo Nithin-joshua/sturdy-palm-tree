@@ -102,9 +102,12 @@ class InspectionReport(BaseModel):
     input_data_summary: str
 
     defect_type: str
+    defect_description: Optional[str] = None
     defect_location: Optional[str] = None
     defect_bbox: Optional[BoundingBox] = None
     confidence: float = Field(ge=0.0, le=1.0)
+    detector: Optional[str] = None
+    detector_model: Optional[str] = None
 
     severity_level: SeverityLevel
     recommended_action: RecommendedAction

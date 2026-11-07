@@ -72,6 +72,10 @@ def run_inspection(
 
     # 5. Report generation.
     resolved_object = object_name or Path(image_name).stem
+    detector_name = detector.__class__.__name__
+    detector_cfg = getattr(detector, "config", None)
+    detector_model = getattr(detector_cfg, "vlm_model", None) if detector_cfg else None
+
     report = build_report(
         object_name=resolved_object,
         image_name=image_name,
@@ -80,6 +84,8 @@ def run_inspection(
         standard_evidence=standard_evidence,
         sensor_readings=sensor_readings,
         standard_name=standard_name,
+        detector=detector_name,
+        detector_model=detector_model,
     )
 
     # 6. Optional annotated defect image (Phase 2).
