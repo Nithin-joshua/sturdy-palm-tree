@@ -91,6 +91,13 @@ class VisionConfig:
             else "qwen2.5vl"
         )
 
+        raw_model = _env("INSPECTION_VLM_MODEL", default_model) or default_model
+        # Automatically redirect deprecated / 404 models to the working Nemotron VL model
+        if "llama-3.2-11b-vision-instruct" in raw_model:
+            resolved_vlm_model = "nvidia/nemotron-3.5-super-vl:free"
+        else:
+            resolved_vlm_model = raw_model
+
         return cls(
             backend=backend,
             confidence_threshold=_env_float("INSPECTION_CONFIDENCE_THRESHOLD", 0.25),
@@ -100,7 +107,7 @@ class VisionConfig:
             or "Qwen/Qwen2.5-VL-3B-Instruct",
             qwen_device=_env("INSPECTION_QWEN_DEVICE", "auto") or "auto",
             qwen_max_new_tokens=_env_int("INSPECTION_QWEN_MAX_NEW_TOKENS", 256),
-            vlm_model=_env("INSPECTION_VLM_MODEL", default_model) or default_model,
+            vlm_model=resolved_vlm_model,
             vlm_api_key=api_key,
             vlm_base_url=_env("INSPECTION_VLM_BASE_URL", default_base_url),
         )

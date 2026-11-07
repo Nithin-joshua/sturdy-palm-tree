@@ -100,25 +100,51 @@ class VLMDefectDetector(DefectDetector):
             filename,
             len(image_bytes),
         )
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": USER_PROMPT},
+                    {"type": "image_url", "image_url": {"url": data_uri}},
+                ],
+            },
+        ]
         try:
             response = client.chat.completions.create(
                 model=self.config.vlm_model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": USER_PROMPT},
-                            {"type": "image_url", "image_url": {"url": data_uri}},
-                        ],
-                    },
-                ],
+                messages=messages,
                 temperature=0,
             )
             content = response.choices[0].message.content or ""
             logger.info("VLM API response received (%d chars): %s", len(content), content[:160])
             return observation_from_payload(content, hints)
         except Exception as exc:
+            # Automatic fallback if the requested model is 404/unserved on OpenRouter
+            err_str = str(exc).lower()
+            if (
+                ("404" in err_str or "not found" in err_str or "no provider" in err_str)
+                and self.config.vlm_model != "nvidia/nemotron-3.5-super-vl:free"
+            ):
+                logger.warning(
+                    "Model '%s' is unavailable (404/unserved); automatically retrying with nvidia/nemotron-3.5-super-vl:free...",
+                    self.config.vlm_model,
+                )
+                try:
+                    retry_response = client.chat.completions.create(
+                        model="nvidia/nemotron-3.5-super-vl:free",
+                        messages=messages,
+                        temperature=0,
+                    )
+                    retry_content = retry_response.choices[0].message.content or ""
+                    logger.info("Fallback Nemotron VLM response received (%d chars): %s", len(retry_content), retry_content[:160])
+                    obs = observation_from_payload(retry_content, hints)
+                    obs.description = f"[Via Nemotron fallback]: {obs.description}"
+                    return obs
+                except Exception as retry_exc:
+                    logger.error("Nemotron fallback also failed: %s", retry_exc)
+                    exc = retry_exc
+
             logger.error("VLM inference failed via model %s: %s", self.config.vlm_model, exc)
             return DefectObservation(
                 defect_type="unknown",
