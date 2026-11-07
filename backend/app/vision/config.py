@@ -17,7 +17,7 @@ def _env(name: str, default: str | None = None) -> str | None:
     value = os.getenv(name)
     if value is None:
         return default
-    value = value.strip()
+    value = value.strip().strip("\"'")
     return value or default
 
 
@@ -76,6 +76,21 @@ class VisionConfig:
                     key, val = pair.split("=", 1)
                     class_map[key.strip()] = val.strip()
 
+        api_key = (
+            _env("INSPECTION_VLM_API_KEY")
+            or _env("OPENROUTER_API_KEY")
+            or _env("OPENAI_API_KEY")
+        )
+        is_openrouter = bool(
+            api_key and (api_key.startswith("sk-or-") or "openrouter" in str(_env("INSPECTION_VLM_BASE_URL", "")).lower())
+        )
+        default_base_url = "https://openrouter.ai/api/v1" if is_openrouter else None
+        default_model = (
+            "meta-llama/llama-3.2-11b-vision-instruct:free"
+            if is_openrouter
+            else "qwen2.5vl"
+        )
+
         return cls(
             backend=backend,
             confidence_threshold=_env_float("INSPECTION_CONFIDENCE_THRESHOLD", 0.25),
@@ -85,7 +100,7 @@ class VisionConfig:
             or "Qwen/Qwen2.5-VL-3B-Instruct",
             qwen_device=_env("INSPECTION_QWEN_DEVICE", "auto") or "auto",
             qwen_max_new_tokens=_env_int("INSPECTION_QWEN_MAX_NEW_TOKENS", 256),
-            vlm_model=_env("INSPECTION_VLM_MODEL", "qwen2.5vl") or "qwen2.5vl",
-            vlm_api_key=_env("INSPECTION_VLM_API_KEY") or _env("OPENAI_API_KEY"),
-            vlm_base_url=_env("INSPECTION_VLM_BASE_URL"),
+            vlm_model=_env("INSPECTION_VLM_MODEL", default_model) or default_model,
+            vlm_api_key=api_key,
+            vlm_base_url=_env("INSPECTION_VLM_BASE_URL", default_base_url),
         )

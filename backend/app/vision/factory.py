@@ -108,6 +108,19 @@ def build_detector(config: Optional[VisionConfig] = None) -> DefectDetector:
     config = config or VisionConfig.from_env()
     backend = (config.backend or "heuristic").lower()
 
+    # If a real VLM API key is configured, ensure VLM is utilized even if the
+    # environment default was left as 'heuristic' or 'auto'.
+    has_real_key = bool(
+        config.vlm_api_key
+        and config.vlm_api_key != "your_openrouter_api_key_here"
+    )
+    if backend in {"heuristic", "auto"} and has_real_key:
+        logger.info(
+            "Valid VLM API key detected; auto-selecting 'vlm' detector backend instead of '%s'.",
+            backend,
+        )
+        backend = "vlm"
+
     try:
         if backend == "heuristic":
             return HeuristicDefectDetector()

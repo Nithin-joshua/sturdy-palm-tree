@@ -93,6 +93,13 @@ class VLMDefectDetector(DefectDetector):
             f"data:{_mime_for(filename)};base64,"
             + base64.b64encode(image_bytes).decode("ascii")
         )
+        logger.info(
+            "Calling VLM API: model=%s base_url=%s for image '%s' (%d bytes)...",
+            self.config.vlm_model,
+            self.config.vlm_base_url or "api.openai.com",
+            filename,
+            len(image_bytes),
+        )
         try:
             response = client.chat.completions.create(
                 model=self.config.vlm_model,
@@ -109,6 +116,7 @@ class VLMDefectDetector(DefectDetector):
                 temperature=0,
             )
             content = response.choices[0].message.content or ""
+            logger.info("VLM API response received (%d chars): %s", len(content), content[:160])
             return observation_from_payload(content, hints)
         except Exception as exc:
             logger.error("VLM inference failed via model %s: %s", self.config.vlm_model, exc)

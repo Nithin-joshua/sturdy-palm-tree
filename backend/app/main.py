@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import logging
 from pathlib import Path
 from typing import Any
 from fastapi import FastAPI
@@ -9,12 +11,36 @@ from backend.app.core.config import get_app_config
 from starlette.requests import Request
 from starlette.responses import Response
 
+logger = logging.getLogger(__name__)
 config = get_app_config()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from backend.app.vision.config import VisionConfig
+
+    v_cfg = VisionConfig.from_env()
+    key = v_cfg.vlm_api_key or ""
+    masked = (
+        f"{key[:8]}...{key[-4:]}"
+        if len(key) > 12
+        else ("CONFIGURED" if key else "MISSING")
+    )
+    logger.info("==================================================")
+    logger.info("Industrial Inspection Service Started")
+    logger.info("Active Vision Detector: %s", v_cfg.backend)
+    logger.info("VLM Model: %s", v_cfg.vlm_model)
+    logger.info("VLM Base URL: %s", v_cfg.vlm_base_url)
+    logger.info("VLM API Key: %s", masked)
+    logger.info("==================================================")
+    yield
+
 
 app = FastAPI(
     title=config.app_title,
     description="MVP API for industrial defect inspection workflows.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Standard security headers middleware for production hardening
